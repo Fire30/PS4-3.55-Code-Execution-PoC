@@ -22,3 +22,8 @@ Acknowledgements
 xyz - Much of the code is based off of his code used for the henkaku project  
 Anonymous contributor - WebKit vulnerability PoC  
 CTurt - I basically copied his JuSt-ROP idea
+
+
+Contributing
+================
+The code currently is a bit of a mess, so if you have any improvements feel free to send a pull request or make an issue. Also I am perfectly fine if you want to fork and create your own project.
