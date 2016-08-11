@@ -30,7 +30,7 @@ Acknowledgements
 xyz - Much of the code is based off of his code used for the henkaku project  
 Anonymous contributor - WebKit vulnerability PoC  
 CTurt - I basically copied his JuSt-ROP idea  
-xerpi - Used his idea for the socket code
+xerpi - Used his idea for the socket code  
 rck\`d - Finding bugs such as not allocating any space for a stack on function calls
 
 
