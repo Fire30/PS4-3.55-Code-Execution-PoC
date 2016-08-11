@@ -133,8 +133,8 @@
     rop_buf_addr = new dcodeIO.Long(cbuf[0x14], cbuf[0x15], true)
 
     rop_buf_addr = rop_buf_addr.add(0x10000 * 4)
-    rop_buf[0x14] = rop_buf_addr.getLowBitsUnsigned()
-    rop_buf[0x15] = rop_buf_addr.getHighBitsUnsigned()
+    cbuf[0x14] = rop_buf_addr.getLowBitsUnsigned()
+    cbuf[0x15] = rop_buf_addr.getHighBitsUnsigned()
 
     storage.set_initial_addr(rop_buf_addr.add(0x10000 * 4))
 
