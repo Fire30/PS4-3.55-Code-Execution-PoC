@@ -36,7 +36,7 @@ class PS4Server(SimpleHTTPServer.SimpleHTTPRequestHandler):
             data_string = self.rfile.read(int(self.headers['Content-Length']))
             self.send_response(200)
             self.end_headers()
-            f = open('dumps/dump_%s.bin' % dump_index, mode='w')
+            f = open('dumps/dump_%s.bin' % dump_index, mode='wb')
             f.write(data_string)
             f.close()
             print 'Saved dump to dump_%s.bin' % dump_index

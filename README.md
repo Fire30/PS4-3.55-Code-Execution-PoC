@@ -1,6 +1,6 @@
 PS4 3.55 Code Execution
 ==============
-This repo contains a PoC for getting code execution on ps4's with firmware version 3.55 It uses the same webkit vulnerability as the henkaku project. So far there is basic ROP working and returning to normal execution is included. Next steps will be to map a jit page sucessfully and getting actual shellcode executed.
+This repo contains a PoC for getting code execution on ps4's with firmware version 3.55 It uses the same webkit vulnerability as the henkaku project. So far there is basic ROP working and returning to normal execution is included. I have also included some helper methods to make researching a tad easier. Currently the documentation is pretty poor but I will  be updating it over time.
 
 Usage
 ==============
@@ -13,15 +13,24 @@ Debug output will come from this process.
 Navigate to the User's Guide page on the PS4 and information about the exploit and all loaded modules should be printed out. This is an example of what running it will look like:
 https://gist.github.com/Fire30/2e0ea2d73d3a1f6f95d80aea77b75df8
 
+If you want to try the socket test to work. Change the IP address at the bottom of ps4sploit.html to your computers and run a command such as `netcat -l 0.0.0.0 8989 -v`. You should see something like:
+```
+Listening on [0.0.0.0] (family 0, port 8989)
+Connection from [192.168.1.72] port 8989 [tcp/sunwebadmins] accepted (family 2, sport 59389)
+Hello From a PS4!
+```
+
 There are a few notes:
 * The exploit is not 100% reliable currently. It is more like 80% which is good enough for our purposes. So if it does not work on first try, try a few more times. Also doing to much allocating after the sort() is called can make it more unstable.
 * The process will crash after the rop is done executing.
+* This is really only useful for researchers. There are many many more steps needed before this will be useful to normal users.
 
 Acknowledgements
 ================
 xyz - Much of the code is based off of his code used for the henkaku project  
 Anonymous contributor - WebKit vulnerability PoC  
-CTurt - I basically copied his JuSt-ROP idea
+CTurt - I basically copied his JuSt-ROP idea  
+xerpi - Used his idea for the socket code
 
 
 Contributing
