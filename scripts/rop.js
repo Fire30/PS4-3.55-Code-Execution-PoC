@@ -90,7 +90,7 @@ function RopChain() {
         this.add(typeof(arg4) !== "undefined" ? arg4 : 0)
         this.add("pop r8");
         this.add(typeof(arg5) !== "undefined" ? arg5 : 0)
-        this.add("pop r8");
+        this.add("pop r9");
         this.add(typeof(arg6) !== "undefined" ? arg6 : 0)
         this.add("syscall")
     }
