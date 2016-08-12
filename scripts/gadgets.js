@@ -17,7 +17,7 @@ gadgetMap = {
   },
   'PlayStation 4 3.50': {
     'xchg rax, rsp; dec dword ptr [rax - 0x77]': new gadget(LIBWEBKIT, 0x15d771 + 0xC00000, [0x48, 0x94, 0xFF, 0x48, 0x89]),
-    'pop rcx; pop rcx': new gadget(LIBWEBKIT, 0x93303 + 0xC00000, [0x59, 0x59]),
+    'pop rcx; pop rcx': new gadget(LIBWEBKIT, 0x93303 + 0xC00000/*, [0x59, 0x59]*/),
     'pop rcx': new gadget(LIBWEBKIT, 0x3ca9fd, [0x59]),
     'add dword ptr [rax - 0x77], ecx': new gadget(LIBWEBKIT, 0x55ac, [0x01, 0x48, 0x89]),
     'pop rdi': new gadget(LIBWEBKIT, 0x113991, [0x5f]),
