@@ -16,7 +16,7 @@ gadgetMap = {
     'pop r9': new gadget(VTABLE, -0x17202f1),
   },
   'PlayStation 4 3.50': {
-    'xchg rax, rsp; dec dword ptr [rax - 0x77]': new gadget(LIBWEBKIT, 0xD5d771, [0x48, 0x94, 0xFF, 0x48, 0x89]),
+    'xchg rax, rsp; dec dword ptr [rax - 0x77]': new gadget(LIBWEBKIT, 0xd5d771, [0x48, 0x94, 0xFF, 0x48, 0x89]),
     'pop rcx; pop rcx': new gadget(LIBWEBKIT, 0x2017594, [0x59, 0x59]),
     'pop rcx': new gadget(LIBWEBKIT, 0x3ca9fd, [0x59]),
     'add dword ptr [rax - 0x77], ecx': new gadget(LIBWEBKIT, 0x55ac, [0x01, 0x48, 0x89]),
@@ -25,10 +25,10 @@ gadgetMap = {
     'pop rsi': new gadget(LIBWEBKIT, 0xb9ebb, [0x5E]),
     'pop rdx': new gadget(LIBWEBKIT, 0x1afa, [0x5A]),
     'pop rax': new gadget(LIBWEBKIT, 0x1c6ab, [0x58]),
-    'syscall': new gadget(LIBWEBKIT, 0x1CA1B28, [0x0F, 0x05]),
+    'syscall': new gadget(LIBWEBKIT, 0x1ca1b28, [0x0F, 0x05]),
     'pop rsp': new gadget(LIBWEBKIT, 0x376850, [0x5C]),
     'mov rax, qword ptr [rax]': new gadget(LIBWEBKIT, 0x4add2, [0x48, 0x8B, 0x00]),
-    'pop r8': new gadget(LIBWEBKIT, 0x2b3022, [0x47, 0x58]),
-    'pop r9': new gadget(LIBWEBKIT, 0xee09bf, [0x47, 0x59]) 
+    'pop r8': new gadget(LIBWEBKIT, 0x4c12ed, [0x41, 0x58]),
+    'pop r9': new gadget(LIBWEBKIT, 0xee09bf, [0x47, 0x59]) // note: this is actually "rex.RXB pop r9"
   }
 }
