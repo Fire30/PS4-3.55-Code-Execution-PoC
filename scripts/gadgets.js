@@ -32,4 +32,3 @@ gadgetMap = {
   //'pop r9': new gadget(VTABLE, -0x17202f1, [0x41, 0x59])
   }
 }
-

