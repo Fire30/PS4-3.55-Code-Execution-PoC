@@ -33,14 +33,17 @@ class PS4Server(SimpleHTTPServer.SimpleHTTPRequestHandler):
             print data_string
         if '/debug/bin' in self.path:
             global dump_index
+            filename = self.path.split("/")[-1]
+            if filename is "undefined":
+                filename = 'dump_%s.bin' % dump_index
+                dump_index += 1
             data_string = self.rfile.read(int(self.headers['Content-Length']))
             self.send_response(200)
             self.end_headers()
-            f = open('dumps/dump_%s.bin' % dump_index, mode='wb')
+            f = open('dumps/'+filename, mode='wb')
             f.write(data_string)
             f.close()
-            print 'Saved dump to dump_%s.bin' % dump_index
-            dump_index += 1
+            print 'Saved dump to %s' % filename
 
     def log_message(self, format, *args):
         pass
