@@ -29,7 +29,7 @@ function debug_log(msg) {
 
 function debug_bin(bin, name) {
     $.ajax({
-        url: '/debug/bin/'+name,
+        url: '/debug/bin/' + name,
         type: 'POST',
         contentType: 'application/octet-stream',
         data: bin,
