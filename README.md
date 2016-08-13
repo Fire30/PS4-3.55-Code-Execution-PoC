@@ -1,6 +1,6 @@
 PS4 3.55 Code Execution
 ==============
-This repo contains a PoC for getting code execution on ps4's with firmware version 3.55 It uses the same webkit vulnerability as the henkaku project. So far there is basic ROP working and returning to normal execution is included. I have also included some helper methods to make researching a tad easier. Currently the documentation is pretty poor but I will  be updating it over time.
+This repo contains a PoC for getting code execution on ps4's with firmware version 3.55(Now with support for 3.15 and 3.50).  It uses the same webkit vulnerability as the henkaku project. So far there is basic ROP working and returning to normal execution is included. I have also included some helper methods to make researching a tad easier. Currently the documentation is pretty poor but I will  be updating it over time.
 
 Usage
 ==============
@@ -32,6 +32,8 @@ Anonymous contributor - WebKit vulnerability PoC
 CTurt - I basically copied his JuSt-ROP idea  
 xerpi - Used his idea for the socket code  
 rck\`d - Finding bugs such as not allocating any space for a stack on function calls
+Maxton - 3.50 support and various cleanup
+Thunder07 - 3.15 support
 
 
 Contributing
