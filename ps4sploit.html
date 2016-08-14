@@ -187,8 +187,10 @@
             r.add(ret)
             r.add('mov qword ptr [rdi], rax')
             r.execute()
-            if (read32(ret) != 0)
+            if (read32(ret) != 0) {
+                storage.free(0x1A8 + 0x4)
                 continue;
+            }
             var base = read64(buf.add(0x44 * 4))
             var name = read_str(buf.add(0x8))
             debug_log('Module name: ' + name)
